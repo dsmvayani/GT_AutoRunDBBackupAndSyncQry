@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36408.4 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GT_AutoRunDBBackupAndSyncQry", "GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry.csproj", "{D75CB9C9-84D3-4F49-9C83-623B3CC9F9AB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D75CB9C9-84D3-4F49-9C83-623B3CC9F9AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D75CB9C9-84D3-4F49-9C83-623B3CC9F9AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D75CB9C9-84D3-4F49-9C83-623B3CC9F9AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D75CB9C9-84D3-4F49-9C83-623B3CC9F9AB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {071910C6-934D-4C1F-9B47-4116ED7D4FC9}
+	EndGlobalSection
+EndGlobal

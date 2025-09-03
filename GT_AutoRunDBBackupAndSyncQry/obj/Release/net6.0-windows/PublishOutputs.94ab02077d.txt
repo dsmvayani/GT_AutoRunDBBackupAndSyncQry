@@ -1,0 +1,15 @@
+D:\Project\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\GT_AutoRunDBBackupAndSyncQry.exe
+D:\Project\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\GT_AutoRunDBBackupAndSyncQry.dll
+D:\Project\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\GT_AutoRunDBBackupAndSyncQry.deps.json
+D:\Project\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\GT_AutoRunDBBackupAndSyncQry.runtimeconfig.json
+D:\Project\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\GT_AutoRunDBBackupAndSyncQry.dll.config
+D:\Project\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\GT_AutoRunDBBackupAndSyncQry.pdb
+D:\Project\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\SharpCompress.dll
+D:\Project\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\System.Data.SqlClient.dll
+D:\Project\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\ZstdSharp.dll
+D:\Project\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\runtimes\win-arm64\native\sni.dll
+D:\Project\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\runtimes\win-x64\native\sni.dll
+D:\Project\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\runtimes\win-x86\native\sni.dll
+D:\Project\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\runtimes\unix\lib\net6.0\System.Data.SqlClient.dll
+D:\Project\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\runtimes\win\lib\net6.0\System.Data.SqlClient.dll
+D:\Project\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\GTVeriSys_Net.dll

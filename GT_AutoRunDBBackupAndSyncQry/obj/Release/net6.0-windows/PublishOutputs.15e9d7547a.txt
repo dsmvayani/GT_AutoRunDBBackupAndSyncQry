@@ -1,0 +1,15 @@
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\GT_AutoRunDBBackupAndSyncQry.exe
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\GT_AutoRunDBBackupAndSyncQry.dll
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\GT_AutoRunDBBackupAndSyncQry.deps.json
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\GT_AutoRunDBBackupAndSyncQry.runtimeconfig.json
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\GT_AutoRunDBBackupAndSyncQry.dll.config
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\GT_AutoRunDBBackupAndSyncQry.pdb
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\SharpCompress.dll
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\System.Data.SqlClient.dll
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\ZstdSharp.dll
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\runtimes\win-arm64\native\sni.dll
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\runtimes\win-x64\native\sni.dll
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\runtimes\win-x86\native\sni.dll
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\runtimes\unix\lib\net6.0\System.Data.SqlClient.dll
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\runtimes\win\lib\net6.0\System.Data.SqlClient.dll
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\publish\GTVeriSys_Net.dll
