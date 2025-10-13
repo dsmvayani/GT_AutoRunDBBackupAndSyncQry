@@ -25,50 +25,66 @@ namespace GT_AutoRunDBBackupAndSyncQry
 
         private async void UploadDataBtn_Click(object sender, EventArgs e)
         {
-            // Button disable aur text change
             UploadDataBtn.Enabled = false;
             string oldText = UploadDataBtn.Text;
-            UploadDataBtn.Text = "Loading...";
 
+            bool uploading = true;
+
+            // 🔹 Start simple animation (dots increasing)
+            var animationTask = Task.Run(async () =>
+            {
+                int dotCount = 0;
+                while (uploading)
+                {
+                    dotCount = (dotCount + 1) % 4;
+                    string dots = new string('.', dotCount);
+                    Invoke(new Action(() => UploadDataBtn.Text = "Uploading" + dots));
+                    await Task.Delay(500);
+                }
+            });
 
             try
             {
                 await Task.Run(() =>
                 {
-                    RunBackupAndUpload(); // Main kaam alag method me
+                    RunBackupAndUpload();
                 });
             }
             finally
             {
-                // Wapas button ko normal state me lao
+                // 🔹 Stop animation
+                uploading = false;
+                await animationTask;
+
                 UploadDataBtn.Text = oldText;
                 UploadDataBtn.Enabled = true;
             }
         }
+
+
         private void RunBackupAndUpload()
         {
-            // Log file ka path
             string backupFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DBBackups");
             Directory.CreateDirectory(backupFolder);
             string logFile = Path.Combine(backupFolder, "UploadLog.txt");
 
             try
             {
-                // 1. Connection string
                 string connStr = ConfigurationManager.AppSettings["DataUploadConnectionString"];
 
-                // Database name nikal lo
                 string dbName;
                 using (SqlConnection conn = new SqlConnection(connStr))
                 {
+                    conn.Open();
                     dbName = conn.Database;
+                    // ✅ Update DBNameText safely on UI thread
+                    DBNameText.Invoke(new Action(() => DBNameText.Text = dbName));
                 }
 
-                // File paths
                 string backupFile = Path.Combine(backupFolder, $"{dbName}.bak");
                 string zipFile = Path.Combine(backupFolder, $"{dbName}.zip");
 
-                // 2. SQL backup
+                // 1️⃣ SQL backup
                 using (SqlConnection conn = new SqlConnection(connStr))
                 {
                     conn.Open();
@@ -79,28 +95,24 @@ namespace GT_AutoRunDBBackupAndSyncQry
                     }
                 }
 
-                // 3. Zip the backup
+                // 2️⃣ Zip backup file
                 if (File.Exists(zipFile)) File.Delete(zipFile);
                 using (FileStream zipToOpen = new FileStream(zipFile, FileMode.Create))
+                using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Create))
                 {
-                    using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Create))
-                    {
-                        archive.CreateEntryFromFile(backupFile, Path.GetFileName(backupFile));
-                    }
+                    archive.CreateEntryFromFile(backupFile, Path.GetFileName(backupFile));
                 }
 
-
-                // 4. FTP details
+                // 3️⃣ FTP details
                 string ftpHost = GTVeriSys_Net.nDecode(ConfigurationManager.AppSettings["FTPHost"], "Y");
                 string ftpPort = GTVeriSys_Net.nDecode(ConfigurationManager.AppSettings["FTPPort"], "Y");
                 string ftpUser = GTVeriSys_Net.nDecode(ConfigurationManager.AppSettings["FTPUser"], "Y");
                 string ftpPass = GTVeriSys_Net.nDecode(ConfigurationManager.AppSettings["FTPPassword"], "Y");
                 string ftpPath = ConfigurationManager.AppSettings["FTPPath"];
 
-                // FTP URL with file name
                 string ftpUrl = $"ftp://{ftpHost}:{ftpPort}{ftpPath}/{Path.GetFileName(zipFile)}";
 
-                // 5. Delete old file on FTP if exists
+                // 4️⃣ Delete old file
                 try
                 {
                     FtpWebRequest delRequest = (FtpWebRequest)WebRequest.Create(ftpUrl);
@@ -110,10 +122,10 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 }
                 catch
                 {
-                    // Agar pehle se file nahi hai to ignore
+                    // ignore if file doesn’t exist
                 }
 
-                // 6. Upload new file
+                // 5️⃣ Upload new file
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
                 request.Method = WebRequestMethods.Ftp.UploadFile;
                 request.Credentials = new NetworkCredential(ftpUser, ftpPass);
@@ -128,28 +140,24 @@ namespace GT_AutoRunDBBackupAndSyncQry
 
                 using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
                 {
-                    // Success message
                     string successMsg = $"Backup and upload successful! File: {Path.GetFileName(zipFile)}";
-                    MessageBox.Show(successMsg, "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    // Log success
+                    // ✅ Show success on UI thread
+                    MessageBox.Show(successMsg, "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     File.AppendAllText(logFile, $"[{DateTime.Now}] SUCCESS - {successMsg}{Environment.NewLine}");
                 }
 
-                // 7. Delete local files
+                // 6️⃣ Clean up
                 if (File.Exists(backupFile)) File.Delete(backupFile);
                 if (File.Exists(zipFile)) File.Delete(zipFile);
             }
             catch (Exception ex)
             {
-                // Error message
                 MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-
-                // Log error
-                logFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DBBackups", "UploadLog.txt");
                 File.AppendAllText(logFile, $"[{DateTime.Now}] ERROR - {ex.Message}{Environment.NewLine}");
             }
         }
+
 
 
         private async void DataSyncBtn_Click(object sender, EventArgs e)

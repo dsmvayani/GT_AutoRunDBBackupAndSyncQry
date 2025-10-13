@@ -23,6 +23,7 @@
             DataSyncLabel = new Label();
             label2 = new Label();
             DataDownloadBtn = new Button();
+            DBNameText = new Label();
             SuspendLayout();
             // 
             // UploadDataBtn
@@ -103,12 +104,21 @@
             DataDownloadBtn.UseVisualStyleBackColor = false;
             DataDownloadBtn.Click += DataDownloadBtn_Click;
             // 
+            // DBNameText
+            // 
+            DBNameText.AutoSize = true;
+            DBNameText.Location = new Point(98, 123);
+            DBNameText.Name = "DBNameText";
+            DBNameText.Size = new Size(0, 15);
+            DBNameText.TabIndex = 4;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.WhiteSmoke;
             ClientSize = new Size(375, 182);
+            Controls.Add(DBNameText);
             Controls.Add(DataDownloadBtn);
             Controls.Add(label2);
             Controls.Add(DataSyncLabel);
@@ -134,5 +144,6 @@
         private Label label2;
         private Button button1;
         private Button DataDownloadBtn;
+        private Label DBNameText;
     }
 }
