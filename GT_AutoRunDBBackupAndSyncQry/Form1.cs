@@ -88,12 +88,14 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 using (SqlConnection conn = new SqlConnection(connStr))
                 {
                     conn.Open();
-                    string sql = $@"BACKUP DATABASE [{dbName}] TO DISK = '{backupFile}' WITH INIT, FORMAT";
+                    string sql = $@"BACKUP DATABASE [{dbName}] TO DISK = '{backupFile}' WITH INIT, FORMAT, COMPRESSION";
                     using (SqlCommand cmd = new SqlCommand(sql, conn))
                     {
+                        cmd.CommandTimeout = 0; // No timeout
                         cmd.ExecuteNonQuery();
                     }
                 }
+
 
                 // 2️⃣ Zip backup file
                 if (File.Exists(zipFile)) File.Delete(zipFile);
