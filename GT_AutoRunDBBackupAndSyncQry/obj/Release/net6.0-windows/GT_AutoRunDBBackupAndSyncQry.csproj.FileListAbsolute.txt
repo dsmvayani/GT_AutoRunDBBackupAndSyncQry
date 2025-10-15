@@ -54,3 +54,4 @@ D:\Project\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\obj\Release
 D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\SharpCompress.dll
 D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\ZstdSharp.dll
 D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\bin\Release\net6.0-windows\GTVeriSys_Net.dll
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\obj\Release\net6.0-windows\GT_AutoRunDBBackupAndSyncQry.sourcelink.json

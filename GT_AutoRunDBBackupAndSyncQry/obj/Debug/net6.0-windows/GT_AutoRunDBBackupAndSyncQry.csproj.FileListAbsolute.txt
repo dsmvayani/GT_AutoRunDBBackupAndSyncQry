@@ -54,3 +54,4 @@ D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\obj\Debug
 D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\obj\Debug\net6.0-windows\GT_AutoRunDBBackupAndSyncQry.pdb
 D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\obj\Debug\net6.0-windows\GT_AutoRunDBBackupAndSyncQry.genruntimeconfig.cache
 D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\obj\Debug\net6.0-windows\ref\GT_AutoRunDBBackupAndSyncQry.dll
+D:\Developer\GT_AutoRunDBBackupAndSyncQry\GT_AutoRunDBBackupAndSyncQry\obj\Debug\net6.0-windows\GT_AutoRunDBBackupAndSyncQry.sourcelink.json

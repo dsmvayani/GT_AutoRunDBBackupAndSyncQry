@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GT_AutoRunDBBackupAndSyncQry")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4b98c586025050d7c6cd43374911e7f987c5bd3b")]
 [assembly: System.Reflection.AssemblyProductAttribute("GT_AutoRunDBBackupAndSyncQry")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GT_AutoRunDBBackupAndSyncQry")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

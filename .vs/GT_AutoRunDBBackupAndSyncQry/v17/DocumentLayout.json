@@ -1,0 +1,90 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Developer\\GT_AutoRunDBBackupAndSyncQry\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{D75CB9C9-84D3-4F49-9C83-623B3CC9F9AB}|GT_AutoRunDBBackupAndSyncQry\\GT_AutoRunDBBackupAndSyncQry.csproj|d:\\developer\\gt_autorundbbackupandsyncqry\\gt_autorundbbackupandsyncqry\\app.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
+      "RelativeMoniker": "D:0:0:{D75CB9C9-84D3-4F49-9C83-623B3CC9F9AB}|GT_AutoRunDBBackupAndSyncQry\\GT_AutoRunDBBackupAndSyncQry.csproj|solutionrelative:gt_autorundbbackupandsyncqry\\app.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D75CB9C9-84D3-4F49-9C83-623B3CC9F9AB}|GT_AutoRunDBBackupAndSyncQry\\GT_AutoRunDBBackupAndSyncQry.csproj|d:\\developer\\gt_autorundbbackupandsyncqry\\gt_autorundbbackupandsyncqry\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{D75CB9C9-84D3-4F49-9C83-623B3CC9F9AB}|GT_AutoRunDBBackupAndSyncQry\\GT_AutoRunDBBackupAndSyncQry.csproj|solutionrelative:gt_autorundbbackupandsyncqry\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D75CB9C9-84D3-4F49-9C83-623B3CC9F9AB}|GT_AutoRunDBBackupAndSyncQry\\GT_AutoRunDBBackupAndSyncQry.csproj|d:\\developer\\gt_autorundbbackupandsyncqry\\gt_autorundbbackupandsyncqry\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D75CB9C9-84D3-4F49-9C83-623B3CC9F9AB}|GT_AutoRunDBBackupAndSyncQry\\GT_AutoRunDBBackupAndSyncQry.csproj|solutionrelative:gt_autorundbbackupandsyncqry\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{D75CB9C9-84D3-4F49-9C83-623B3CC9F9AB}|GT_AutoRunDBBackupAndSyncQry\\GT_AutoRunDBBackupAndSyncQry.csproj|d:\\developer\\gt_autorundbbackupandsyncqry\\gt_autorundbbackupandsyncqry\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{D75CB9C9-84D3-4F49-9C83-623B3CC9F9AB}|GT_AutoRunDBBackupAndSyncQry\\GT_AutoRunDBBackupAndSyncQry.csproj|solutionrelative:gt_autorundbbackupandsyncqry\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Form1.cs",
+              "DocumentMoniker": "D:\\Developer\\GT_AutoRunDBBackupAndSyncQry\\GT_AutoRunDBBackupAndSyncQry\\Form1.cs",
+              "RelativeDocumentMoniker": "GT_AutoRunDBBackupAndSyncQry\\Form1.cs",
+              "ToolTip": "D:\\Developer\\GT_AutoRunDBBackupAndSyncQry\\GT_AutoRunDBBackupAndSyncQry\\Form1.cs",
+              "RelativeToolTip": "GT_AutoRunDBBackupAndSyncQry\\Form1.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAcwBcAAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-30T07:00:21.1Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Form1.cs [Design]",
+              "DocumentMoniker": "D:\\Developer\\GT_AutoRunDBBackupAndSyncQry\\GT_AutoRunDBBackupAndSyncQry\\Form1.cs",
+              "RelativeDocumentMoniker": "GT_AutoRunDBBackupAndSyncQry\\Form1.cs",
+              "ToolTip": "D:\\Developer\\GT_AutoRunDBBackupAndSyncQry\\GT_AutoRunDBBackupAndSyncQry\\Form1.cs [Design]",
+              "RelativeToolTip": "GT_AutoRunDBBackupAndSyncQry\\Form1.cs [Design]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-30T07:00:13.266Z",
+              "EditorCaption": " [Design]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "App.config",
+              "DocumentMoniker": "D:\\Developer\\GT_AutoRunDBBackupAndSyncQry\\GT_AutoRunDBBackupAndSyncQry\\App.config",
+              "RelativeDocumentMoniker": "GT_AutoRunDBBackupAndSyncQry\\App.config",
+              "ToolTip": "D:\\Developer\\GT_AutoRunDBBackupAndSyncQry\\GT_AutoRunDBBackupAndSyncQry\\App.config",
+              "RelativeToolTip": "GT_AutoRunDBBackupAndSyncQry\\App.config",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAB2AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000601|",
+              "WhenOpened": "2025-09-30T06:59:40.336Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\Developer\\GT_AutoRunDBBackupAndSyncQry\\GT_AutoRunDBBackupAndSyncQry\\Program.cs",
+              "RelativeDocumentMoniker": "GT_AutoRunDBBackupAndSyncQry\\Program.cs",
+              "ToolTip": "D:\\Developer\\GT_AutoRunDBBackupAndSyncQry\\GT_AutoRunDBBackupAndSyncQry\\Program.cs",
+              "RelativeToolTip": "GT_AutoRunDBBackupAndSyncQry\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-30T06:59:38.781Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
