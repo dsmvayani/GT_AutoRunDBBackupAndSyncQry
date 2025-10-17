@@ -64,6 +64,12 @@ namespace GT_AutoRunDBBackupAndSyncQry
 
         private void RunBackupAndUpload()
         {
+            // 🔹 Force TLS 1.2 (for secure connection)
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+            // 🔹 Disable certificate validation (optional but helps on old PCs)
+            ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => true;
+
             string backupFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DBBackups");
             Directory.CreateDirectory(backupFolder);
             string logFile = Path.Combine(backupFolder, "UploadLog.txt");
@@ -77,7 +83,6 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 {
                     conn.Open();
                     dbName = conn.Database;
-                    // ✅ Update DBNameText safely on UI thread
                     DBNameText.Invoke(new Action(() => DBNameText.Text = dbName));
                 }
 
@@ -91,11 +96,10 @@ namespace GT_AutoRunDBBackupAndSyncQry
                     string sql = $@"BACKUP DATABASE [{dbName}] TO DISK = '{backupFile}' WITH INIT, FORMAT, COMPRESSION";
                     using (SqlCommand cmd = new SqlCommand(sql, conn))
                     {
-                        cmd.CommandTimeout = 0; // No timeout
+                        cmd.CommandTimeout = 0;
                         cmd.ExecuteNonQuery();
                     }
                 }
-
 
                 // 2️⃣ Zip backup file
                 if (File.Exists(zipFile)) File.Delete(zipFile);
@@ -114,37 +118,47 @@ namespace GT_AutoRunDBBackupAndSyncQry
 
                 string ftpUrl = $"ftp://{ftpHost}:{ftpPort}{ftpPath}/{Path.GetFileName(zipFile)}";
 
+                // 🔹 Common FTP request configuration method
+                FtpWebRequest CreateFtpRequest(string url, string method)
+                {
+                    var req = (FtpWebRequest)WebRequest.Create(url);
+                    req.Method = method;
+                    req.Credentials = new NetworkCredential(ftpUser, ftpPass);
+
+                    // ✅ These 3 lines fix most random FTP issues:
+                    req.UseBinary = true;
+                    req.UsePassive = true;  // Enable passive mode (firewall-friendly)
+                    req.Proxy = null;       // Disable proxy interference
+
+                    req.KeepAlive = false;
+                    req.EnableSsl = true;   // Use FTPS (if your server supports it)
+                    return req;
+                }
+
                 // 4️⃣ Delete old file
                 try
                 {
-                    FtpWebRequest delRequest = (FtpWebRequest)WebRequest.Create(ftpUrl);
-                    delRequest.Method = WebRequestMethods.Ftp.DeleteFile;
-                    delRequest.Credentials = new NetworkCredential(ftpUser, ftpPass);
-                    using (FtpWebResponse delResponse = (FtpWebResponse)delRequest.GetResponse()) { }
+                    var delRequest = CreateFtpRequest(ftpUrl, WebRequestMethods.Ftp.DeleteFile);
+                    using (var delResponse = (FtpWebResponse)delRequest.GetResponse()) { }
                 }
                 catch
                 {
-                    // ignore if file doesn’t exist
+                    // Ignore if file doesn’t exist
                 }
 
                 // 5️⃣ Upload new file
-                FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
-                request.Method = WebRequestMethods.Ftp.UploadFile;
-                request.Credentials = new NetworkCredential(ftpUser, ftpPass);
-
+                var uploadRequest = CreateFtpRequest(ftpUrl, WebRequestMethods.Ftp.UploadFile);
                 byte[] fileContents = File.ReadAllBytes(zipFile);
-                request.ContentLength = fileContents.Length;
+                uploadRequest.ContentLength = fileContents.Length;
 
-                using (Stream requestStream = request.GetRequestStream())
+                using (Stream requestStream = uploadRequest.GetRequestStream())
                 {
                     requestStream.Write(fileContents, 0, fileContents.Length);
                 }
 
-                using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
+                using (FtpWebResponse response = (FtpWebResponse)uploadRequest.GetResponse())
                 {
                     string successMsg = $"Backup and upload successful! File: {Path.GetFileName(zipFile)}";
-
-                    // ✅ Show success on UI thread
                     MessageBox.Show(successMsg, "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     File.AppendAllText(logFile, $"[{DateTime.Now}] SUCCESS - {successMsg}{Environment.NewLine}");
                 }
@@ -159,6 +173,7 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 File.AppendAllText(logFile, $"[{DateTime.Now}] ERROR - {ex.Message}{Environment.NewLine}");
             }
         }
+
 
 
 
