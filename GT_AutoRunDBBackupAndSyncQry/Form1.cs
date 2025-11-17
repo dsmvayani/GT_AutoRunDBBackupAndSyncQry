@@ -93,7 +93,20 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 using (SqlConnection conn = new SqlConnection(connStr))
                 {
                     conn.Open();
-                    string sql = $@"BACKUP DATABASE [{dbName}] TO DISK = '{backupFile}' WITH INIT, FORMAT, COMPRESSION";
+                    string edition;
+                    using (SqlCommand cmd = new SqlCommand("SELECT SERVERPROPERTY('Edition')", conn))
+                    {
+                        edition = cmd.ExecuteScalar()?.ToString() ?? "";
+                    }
+
+                    bool supportsCompression = edition.Contains("Enterprise") ||
+                                               edition.Contains("Standard") ||
+                                               edition.Contains("Developer");
+
+                    string sql = supportsCompression
+                        ? $@"BACKUP DATABASE [{dbName}] TO DISK = '{backupFile}' WITH INIT, FORMAT, COMPRESSION"
+                        : $@"BACKUP DATABASE [{dbName}] TO DISK = '{backupFile}' WITH INIT, FORMAT";
+
                     using (SqlCommand cmd = new SqlCommand(sql, conn))
                     {
                         cmd.CommandTimeout = 0;
@@ -555,6 +568,9 @@ namespace GT_AutoRunDBBackupAndSyncQry
             }
         }
 
+        private new System.Windows.Forms.Timer syncTimer;
+        private bool syncTriggeredToday = false;
+
 
         private void Form1_Shown(object sender, EventArgs e)
         {
@@ -562,35 +578,56 @@ namespace GT_AutoRunDBBackupAndSyncQry
             string isReqDataSyncBtn = ConfigurationManager.AppSettings["IsReqDataSyncBtn"];
             string isReqDataDownloadBtn = ConfigurationManager.AppSettings["IsReqDataDownloadBtn"];
 
+            string SyncButtonClickTime = ConfigurationManager.AppSettings["SyncButtonClickTime"];
 
-            if (isReqUploadDataBtn == "0")
-            {
-                UploadDataBtn.Visible = false; // <-- yahan apne button ka naam rakho
-            }
-            else
-            {
-                UploadDataBtn.Visible = true;
-            }
+            UploadDataBtn.Visible = isReqUploadDataBtn == "1";
+            DataSyncBtn.Visible = isReqDataSyncBtn == "1";
+            DataDownloadBtn.Visible = isReqDataDownloadBtn == "1";
 
-            if (isReqDataSyncBtn == "0")
-            {
-                DataSyncBtn.Visible = false;
-            }
-            else
-            {
-                DataSyncBtn.Visible = true;
-                DataSyncBtn.PerformClick(); // ye line button ka click event automatic trigger kar degi
-            }
+            if (isReqDataDownloadBtn == "1")
+                DataDownloadBtn.PerformClick();
 
-            if (isReqDataDownloadBtn == "0")
+            // Start timer for auto sync
+            if (isReqDataSyncBtn == "1")
             {
-                DataDownloadBtn.Visible = false;
-            }
-            else
-            {
-                DataDownloadBtn.Visible = true;
-                DataDownloadBtn.PerformClick(); // ye line button ka click event automatic trigger kar degi
+                syncTimer = new System.Windows.Forms.Timer();
+                syncTimer.Interval = 1000; // 1 second
+                syncTimer.Tick += (s, ev) => CheckAutoSyncTime(SyncButtonClickTime);
+                syncTimer.Start();
             }
         }
+
+        private void CheckAutoSyncTime(string configTime)
+        {
+            if (!DateTime.TryParseExact(
+                    configTime,
+                    "h:mm tt",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None,
+                    out DateTime targetDateTime))
+            {
+                return;
+            }
+
+            TimeSpan targetTime = targetDateTime.TimeOfDay;
+            TimeSpan now = DateTime.Now.TimeOfDay;
+
+            // Run only once per day
+            if (!syncTriggeredToday &&
+                now.Hours == targetTime.Hours &&
+                now.Minutes == targetTime.Minutes)
+            {
+                syncTriggeredToday = true;
+                DataSyncBtn.PerformClick();
+            }
+
+            // Reset flag at midnight so next day it runs again
+            if (now.Hours == 0 && now.Minutes == 0)
+            {
+                syncTriggeredToday = false;
+            }
+        }
+
+
     }
 }
