@@ -488,85 +488,121 @@ namespace GT_AutoRunDBBackupAndSyncQry
         {
             try
             {
-                // Step 1: FTP details
+                // Decode FTP credentials
                 string ftpHost = GTVeriSys_Net.nDecode(ConfigurationManager.AppSettings["FTPHost"], "Y");
                 string ftpPort = GTVeriSys_Net.nDecode(ConfigurationManager.AppSettings["FTPPort"], "Y");
                 string ftpUser = GTVeriSys_Net.nDecode(ConfigurationManager.AppSettings["FTPUser"], "Y");
                 string ftpPass = GTVeriSys_Net.nDecode(ConfigurationManager.AppSettings["FTPPassword"], "Y");
-                string FTPMultiplePath = ConfigurationManager.AppSettings["FTPMultiplePath"];
-                string FTPIgnoreFileName = ConfigurationManager.AppSettings["FTPIgnoreFileName"];
-                string DownloadPath = ConfigurationManager.AppSettings["DownloadPath"];
 
+                // Configs
+                string IsDeleteDownloadDataFromCloud = ConfigurationManager.AppSettings["IsDeleteDownloadDataFromCloud"];
 
-                string basePath = Path.Combine(DownloadPath, "DataDownload_" + DateTime.Now.ToString("ddMMyyyy_hhmmtt"));
-                Directory.CreateDirectory(basePath);
+                string FTPMultiplePath1 = ConfigurationManager.AppSettings["FTPMultiplePath"];
+                string FTPIgnoreFileName1 = ConfigurationManager.AppSettings["FTPIgnoreFileName"];
+                string DownloadPath1 = ConfigurationManager.AppSettings["DownloadPath"];
+                string FTPIgnoreFileName2 = ConfigurationManager.AppSettings["FTPIgnoreFileName2"];
+                string DownloadPath2 = ConfigurationManager.AppSettings["DownloadPath2"];
 
+                string basePath1 = Path.Combine(DownloadPath1, DateTime.Now.ToString("ddMMyyyy_hhmmtt"));
+                string basePath2 = Path.Combine(DownloadPath2, DateTime.Now.ToString("ddMMyyyy_hhmmtt"));
+                Directory.CreateDirectory(basePath1);
+                Directory.CreateDirectory(basePath2);
 
-                // Step 3: split multiple paths
-                string[] paths = FTPMultiplePath.Split(',');
-                string[] ignoreFiles = FTPIgnoreFileName.Split(','); // ignore list
+                // Collect all files from FTP without deleting
+                var allFilesToProcess = GetFilesFromFTP(ftpHost, ftpPort, ftpUser, ftpPass, FTPMultiplePath1, FTPIgnoreFileName1);
 
-                foreach (string remotePath in paths)
+                // Download to first path
+                foreach (var fileUrl in allFilesToProcess)
                 {
-                    string ftpFullPath = $"ftp://{ftpHost}:{ftpPort}{remotePath}";
+                    string localFilePath = Path.Combine(basePath1, Path.GetFileName(fileUrl));
+                    DownloadSingleFile(fileUrl, ftpUser, ftpPass, localFilePath);
+                }
 
-                    // get file list from ftp
-                    FtpWebRequest listRequest = (FtpWebRequest)WebRequest.Create(ftpFullPath);
-                    listRequest.Method = WebRequestMethods.Ftp.ListDirectory;
-                    listRequest.Credentials = new NetworkCredential(ftpUser, ftpPass);
-
-                    List<string> files = new List<string>();
-                    using (FtpWebResponse listResponse = (FtpWebResponse)listRequest.GetResponse())
-                    using (StreamReader reader = new StreamReader(listResponse.GetResponseStream()))
+                // Download to second path
+                foreach (var fileUrl in allFilesToProcess)
+                {
+                    string localFilePath = Path.Combine(basePath2, Path.GetFileName(fileUrl));
+                    // Use second ignore list
+                    if (!ConfigurationManager.AppSettings["FTPIgnoreFileName2"].Split(',').Contains(Path.GetFileName(fileUrl), StringComparer.OrdinalIgnoreCase))
                     {
-                        string line = reader.ReadLine();
-                        while (!string.IsNullOrEmpty(line))
-                        {
-                            files.Add(line);
-                            line = reader.ReadLine();
-                        }
-                    }
-
-                    // download each file
-                    foreach (string file in files)
-                    {
-                        // agar file ignore list mai hai to skip kar do
-                        if (ignoreFiles.Contains(file, StringComparer.OrdinalIgnoreCase))
-                            continue;
-
-                        string localFilePath = Path.Combine(basePath, file);
-                        string ftpFileUrl = $"{ftpFullPath}/{file}";
-
-                        // download
-                        FtpWebRequest downloadRequest = (FtpWebRequest)WebRequest.Create(ftpFileUrl);
-                        downloadRequest.Method = WebRequestMethods.Ftp.DownloadFile;
-                        downloadRequest.Credentials = new NetworkCredential(ftpUser, ftpPass);
-
-                        using (FtpWebResponse downloadResponse = (FtpWebResponse)downloadRequest.GetResponse())
-                        using (Stream ftpStream = downloadResponse.GetResponseStream())
-                        using (FileStream fileStream = new FileStream(localFilePath, FileMode.Create))
-                        {
-                            ftpStream.CopyTo(fileStream);
-                        }
-
-                        // download ke baad delete
-                        FtpWebRequest deleteRequest = (FtpWebRequest)WebRequest.Create(ftpFileUrl);
-                        deleteRequest.Method = WebRequestMethods.Ftp.DeleteFile;
-                        deleteRequest.Credentials = new NetworkCredential(ftpUser, ftpPass);
-                        using (FtpWebResponse deleteResponse = (FtpWebResponse)deleteRequest.GetResponse())
-                        {
-                            // delete success, kuch karna ho tu kar sakte ho
-                        }
+                        DownloadSingleFile(fileUrl, ftpUser, ftpPass, localFilePath);
                     }
                 }
 
-                MessageBox.Show($"✅ Data downloaded & cleaned successfully in: {basePath}", "Success");
+                if (IsDeleteDownloadDataFromCloud == "1")
+                {
+                    // Now delete files from FTP after both downloads
+                    foreach (var fileUrl in allFilesToProcess)
+                    {
+                        DeleteFTPFile(fileUrl, ftpUser, ftpPass);
+                    }
+                }
+
+                MessageBox.Show($"✅ Data downloaded & cleaned successfully:\n1. {basePath1}\n2. {basePath2}", "Success");
             }
             catch (Exception ex)
             {
                 MessageBox.Show("❌ Error while downloading: " + ex.Message);
             }
         }
+
+        // Get all file URLs from FTP paths
+        private List<string> GetFilesFromFTP(string ftpHost, string ftpPort, string ftpUser, string ftpPass, string multiplePaths, string ignoreFilesStr)
+        {
+            string[] paths = multiplePaths.Split(',');
+            string[] ignoreFiles = ignoreFilesStr.Split(',');
+            List<string> allFiles = new List<string>();
+
+            foreach (string remotePath in paths)
+            {
+                string ftpFullPath = $"ftp://{ftpHost}:{ftpPort}{remotePath}";
+                FtpWebRequest listRequest = (FtpWebRequest)WebRequest.Create(ftpFullPath);
+                listRequest.Method = WebRequestMethods.Ftp.ListDirectory;
+                listRequest.Credentials = new NetworkCredential(ftpUser, ftpPass);
+
+                using (FtpWebResponse listResponse = (FtpWebResponse)listRequest.GetResponse())
+                using (StreamReader reader = new StreamReader(listResponse.GetResponseStream()))
+                {
+                    string line;
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        if (!ignoreFiles.Contains(line, StringComparer.OrdinalIgnoreCase))
+                            allFiles.Add($"{ftpFullPath}/{line}");
+                    }
+                }
+            }
+
+            return allFiles;
+        }
+
+        // Download a single file
+        private void DownloadSingleFile(string fileUrl, string ftpUser, string ftpPass, string localFilePath)
+        {
+            FtpWebRequest downloadRequest = (FtpWebRequest)WebRequest.Create(fileUrl);
+            downloadRequest.Method = WebRequestMethods.Ftp.DownloadFile;
+            downloadRequest.Credentials = new NetworkCredential(ftpUser, ftpPass);
+
+            using (FtpWebResponse downloadResponse = (FtpWebResponse)downloadRequest.GetResponse())
+            using (Stream ftpStream = downloadResponse.GetResponseStream())
+            using (FileStream fileStream = new FileStream(localFilePath, FileMode.Create))
+            {
+                ftpStream.CopyTo(fileStream);
+            }
+        }
+
+        // Delete a file on FTP
+        private void DeleteFTPFile(string fileUrl, string ftpUser, string ftpPass)
+        {
+            FtpWebRequest deleteRequest = (FtpWebRequest)WebRequest.Create(fileUrl);
+            deleteRequest.Method = WebRequestMethods.Ftp.DeleteFile;
+            deleteRequest.Credentials = new NetworkCredential(ftpUser, ftpPass);
+            using (FtpWebResponse deleteResponse = (FtpWebResponse)deleteRequest.GetResponse())
+            {
+                // deleted
+            }
+        }
+
+
 
         private new System.Windows.Forms.Timer syncTimer;
         private bool syncTriggeredToday = false;
