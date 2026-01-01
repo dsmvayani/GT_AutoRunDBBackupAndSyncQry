@@ -22,7 +22,11 @@ namespace GT_AutoRunDBBackupAndSyncQry
         }
 
         GTVeriSys_Net.GTVS GTVeriSys_Net = new GTVeriSys_Net.GTVS();
+        private new System.Windows.Forms.Timer syncTimer;
+        private bool syncTriggeredToday = false;
 
+
+        // ================= DATA UPLOAD =================
         private async void UploadDataBtn_Click(object sender, EventArgs e)
         {
             UploadDataBtn.Enabled = false;
@@ -60,8 +64,6 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 UploadDataBtn.Enabled = true;
             }
         }
-
-
         private void RunBackupAndUpload()
         {
             // 🔹 Force TLS 1.2 (for secure connection)
@@ -144,7 +146,7 @@ namespace GT_AutoRunDBBackupAndSyncQry
                     req.Proxy = null;       // Disable proxy interference
 
                     req.KeepAlive = false;
-                    req.EnableSsl = true;   // Use FTPS (if your server supports it)
+                    req.EnableSsl = false;   // Use FTPS (if your server supports it)
                     return req;
                 }
 
@@ -186,10 +188,11 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 File.AppendAllText(logFile, $"[{DateTime.Now}] ERROR - {ex.Message}{Environment.NewLine}");
             }
         }
+        // ================= DATA UPLOAD =================
 
 
 
-
+        // ================= Data SYNC =================
         private async void DataSyncBtn_Click(object sender, EventArgs e)
         {
             // Button disable aur text change
@@ -456,11 +459,11 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 Console.WriteLine("❌ Error in SendBranchReportEmail: " + ex.Message);
             }
         }
+        // ================= Data SYNC =================
 
 
 
-
-
+        // ================= Data DOWNLOAD =================
         private async void DataDownloadBtn_Click(object sender, EventArgs e)
         {
             // Button disable aur text change
@@ -545,7 +548,6 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 MessageBox.Show("❌ Error while downloading: " + ex.Message);
             }
         }
-
         // Get all file URLs from FTP paths
         private List<string> GetFilesFromFTP(string ftpHost, string ftpPort, string ftpUser, string ftpPass, string multiplePaths, string ignoreFilesStr)
         {
@@ -574,7 +576,6 @@ namespace GT_AutoRunDBBackupAndSyncQry
 
             return allFiles;
         }
-
         // Download a single file
         private void DownloadSingleFile(string fileUrl, string ftpUser, string ftpPass, string localFilePath)
         {
@@ -589,7 +590,6 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 ftpStream.CopyTo(fileStream);
             }
         }
-
         // Delete a file on FTP
         private void DeleteFTPFile(string fileUrl, string ftpUser, string ftpPass)
         {
@@ -601,11 +601,9 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 // deleted
             }
         }
+        // ================= Data DOWNLOAD =================
 
 
-
-        private new System.Windows.Forms.Timer syncTimer;
-        private bool syncTriggeredToday = false;
 
 
         private void Form1_Shown(object sender, EventArgs e)
@@ -632,7 +630,6 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 syncTimer.Start();
             }
         }
-
         private void CheckAutoSyncTime(string configTime)
         {
             if (!DateTime.TryParseExact(
@@ -663,7 +660,5 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 syncTriggeredToday = false;
             }
         }
-
-
     }
 }
