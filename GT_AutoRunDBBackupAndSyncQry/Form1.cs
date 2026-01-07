@@ -721,9 +721,10 @@ namespace GT_AutoRunDBBackupAndSyncQry
                     LogFTPPathError("EMAIL ERROR | " + ex.Message);
                 }
 
+                GetDriveSpaceFromFolder();
+
                 // 🔹 Show MessageBox always
                 MessageBox.Show(msg.ToString(), hasError ? "Completed with Errors" : "Success", MessageBoxButtons.OK, hasError ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
-
             }
             catch (Exception ex)
             {
@@ -917,6 +918,84 @@ namespace GT_AutoRunDBBackupAndSyncQry
             public bool IsLocal { get; set; }
             public string User { get; set; }
             public string Pass { get; set; }
+        }
+        private void GetDriveSpaceFromFolder()
+        {
+            try
+            {
+                string ExternalDrivePathForStorageChecking =
+                    ConfigurationManager.AppSettings["ExternalDrivePathForStorageChecking"];
+
+                if (string.IsNullOrWhiteSpace(ExternalDrivePathForStorageChecking))
+                    throw new Exception("Folder path is empty.");
+
+                if (!Directory.Exists(ExternalDrivePathForStorageChecking))
+                    throw new Exception("Folder path does not exist.");
+
+                // Folder ke zariye drive root nikaalna
+                string rootPath = Path.GetPathRoot(ExternalDrivePathForStorageChecking);
+                DriveInfo drive = new DriveInfo(rootPath);
+
+                double totalGB = drive.TotalSize / 1024d / 1024d / 1024d;
+                double freeGB = drive.AvailableFreeSpace / 1024d / 1024d / 1024d;
+                double usedGB = totalGB - freeGB;
+
+                double freePercentage = (freeGB / totalGB) * 100;
+
+                // 🔴 Sirf tab email bhejni hai jab free space 30% se kam ho
+                if (freePercentage >= 30)
+                    return;
+
+                // 🔹 HTML Email Body
+                string htmlMsg = $@"
+                <html>
+                    <body style='font-family:Segoe UI, Arial;'>
+                        <h2 style='color:red;'>⚠ External Drive Storage Alert</h2>
+                        <p><b>Date:</b> {DateTime.Now:dd-MM-yyyy hh:mm tt}</p>
+
+                        <table border='1' cellpadding='8' cellspacing='0' style='border-collapse:collapse;'>
+                            <tr>
+                                <td><b>Drive Letter</b></td>
+                                <td>{drive.Name}</td>
+                            </tr>
+                            <tr>
+                                <td><b>Total Space</b></td>
+                                <td>{totalGB:F1} GB</td>
+                            </tr>
+                            <tr>
+                                <td><b>Used Space</b></td>
+                                <td>{usedGB:F1} GB</td>
+                            </tr>
+                            <tr>
+                                <td><b>Free Space</b></td>
+                                <td>{freeGB:F1} GB</td>
+                            </tr>
+                            <tr style='color:red; font-weight:bold;'>
+                                <td><b>Free Space %</b></td>
+                                <td>{freePercentage:F1}%</td>
+                            </tr>
+                        </table>
+
+                        <p style='margin-top:15px; color:red;'>
+                            Immediate action recommended. Free storage is below 30%.
+                        </p>
+                    </body>
+                </html>";
+
+                string emailSubject =
+                    $"[{DateTime.Now:dd-MM-yyyy_hhmmtt}] - ALERT: External Drive Low Storage ({freePercentage:F1}%)";
+
+                SendEmailWithSubject(htmlMsg, emailSubject);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+            }
         }
         public void SendEmailWithSubject(string htmlBody, string subject)
         {
