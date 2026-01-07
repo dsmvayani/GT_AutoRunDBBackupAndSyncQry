@@ -5,6 +5,7 @@ using System;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
@@ -25,8 +26,7 @@ namespace GT_AutoRunDBBackupAndSyncQry
         private new System.Windows.Forms.Timer syncTimer;
         private bool syncTriggeredToday = false;
 
-
-        // ================= DATA UPLOAD =================
+        #region DATA UPLOAD 
         private async void UploadDataBtn_Click(object sender, EventArgs e)
         {
             UploadDataBtn.Enabled = false;
@@ -188,11 +188,9 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 File.AppendAllText(logFile, $"[{DateTime.Now}] ERROR - {ex.Message}{Environment.NewLine}");
             }
         }
-        // ================= DATA UPLOAD =================
+        #endregion
 
-
-
-        // ================= Data SYNC =================
+        #region DATA SYNC 
         private async void DataSyncBtn_Click(object sender, EventArgs e)
         {
             // Button disable aur text change
@@ -459,18 +457,18 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 Console.WriteLine("❌ Error in SendBranchReportEmail: " + ex.Message);
             }
         }
-        // ================= Data SYNC =================
+        #endregion
 
+        #region DATA DOWNLOAD 
 
-
-        // ================= Data DOWNLOAD =================
+        bool fileError;
+        StringBuilder fileErrMsg;
         private async void DataDownloadBtn_Click(object sender, EventArgs e)
         {
             // Button disable aur text change
             DataDownloadBtn.Enabled = false;
             string oldText = UploadDataBtn.Text;
             DataDownloadBtn.Text = "Loading...";
-
 
             try
             {
@@ -489,95 +487,292 @@ namespace GT_AutoRunDBBackupAndSyncQry
         }
         private void DownloadData()
         {
+            List<string> basePrimaryPaths = new List<string>();
+            string baseSecondaryPath = null;
+            StringBuilder msg = new StringBuilder();
+            StringBuilder errmsg = new StringBuilder();
+            bool hasError = false; // ✅ Track if any error occurred
+
             try
             {
-                bool isSystemMultiplePath =
-                    ConfigurationManager.AppSettings["IsSystemMultiplePath"] == "1";
+                bool isSystemMultiplePath = ConfigurationManager.AppSettings["IsSystemMultiplePath"] == "1";
+                string IsDeleteDownloadDataFromCloud = ConfigurationManager.AppSettings["IsDeleteDownloadDataFromCloud"];
+                string multiplePath = ConfigurationManager.AppSettings["FTPMultiplePath"];
+                string ignore1 = ConfigurationManager.AppSettings["FTPIgnoreFileName"];
+                string ignore2 = ConfigurationManager.AppSettings["FTPIgnoreFileName2"];
+                string DownloadPath1 = ConfigurationManager.AppSettings["DownloadPath"];
+                string DownloadPath2 = ConfigurationManager.AppSettings["DownloadPath2"];
 
-                string IsDeleteDownloadDataFromCloud =
-                    ConfigurationManager.AppSettings["IsDeleteDownloadDataFromCloud"];
+                string monthFolder = DateTime.Now.ToString("MMM-yyyy"); // Jan-2026
+                string timeStamp = DateTime.Now.ToString("dd-MM-yyyy");
 
-                string multiplePath =
-                    ConfigurationManager.AppSettings["FTPMultiplePath"];
-
-                string ignore1 =
-                    ConfigurationManager.AppSettings["FTPIgnoreFileName"];
-
-                string ignore2 =
-                    ConfigurationManager.AppSettings["FTPIgnoreFileName2"];
-
-                string DownloadPath1 =
-                    ConfigurationManager.AppSettings["DownloadPath"];
-
-                string DownloadPath2 =
-                    ConfigurationManager.AppSettings["DownloadPath2"];
-
-                string timeStamp = DateTime.Now.ToString("ddMMyyyy_hhmmtt");
-
-                string basePath1 = Path.Combine(DownloadPath1, timeStamp);
-                string basePath2 = Path.Combine(DownloadPath2, timeStamp);
-
-                Directory.CreateDirectory(basePath1);
-                Directory.CreateDirectory(basePath2);
-
-                List<FileSource> allFiles;
-
-                // 🔹 SOURCE DECISION
-                if (isSystemMultiplePath)
+                // 🔹 Create primary paths
+                foreach (string path in DownloadPath1.Split(','))
                 {
-                    allFiles = GetFilesFromSystem(multiplePath, ignore1);
-                }
-                else
-                {
-                    string ftpHost = GTVeriSys_Net.nDecode(ConfigurationManager.AppSettings["FTPHost"], "Y");
-                    string ftpPort = GTVeriSys_Net.nDecode(ConfigurationManager.AppSettings["FTPPort"], "Y");
-                    string ftpUser = GTVeriSys_Net.nDecode(ConfigurationManager.AppSettings["FTPUser"], "Y");
-                    string ftpPass = GTVeriSys_Net.nDecode(ConfigurationManager.AppSettings["FTPPassword"], "Y");
+                    try
+                    {
+                        string trimmedPath = path.Trim();
 
-                    allFiles = GetFilesFromFTP(
-                        ftpHost, ftpPort, ftpUser, ftpPass, multiplePath, ignore1
-                    );
+                        // ✅ Check if the full path exists (parent folder must exist)
+                        if (!Directory.Exists(trimmedPath))
+                            throw new Exception($"Path does not exist: {trimmedPath}");
+
+                        string monthPath = Path.Combine(trimmedPath, monthFolder);
+                        string finalPath = Path.Combine(monthPath, timeStamp);
+
+                        // ✅ Create only month/date folder if parent exists
+                        Directory.CreateDirectory(finalPath);
+                        basePrimaryPaths.Add(finalPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        hasError = true; // mark error
+                        string errorMsg = $"PRIMARY PATH ERROR | {path} | {ex.Message}";
+                        LogFTPPathError(errorMsg);
+                        errmsg.AppendLine(errorMsg); // add error to message for email & MessageBox
+                    }
                 }
 
-                // 🔹 COMMON PIPELINE
+                // 🔹 Create secondary path
+                if (!string.IsNullOrEmpty(DownloadPath2))
+                {
+                    try
+                    {
+                        string trimmedPath2 = DownloadPath2.Trim();
+
+                        // ✅ Check if parent path exists
+                        if (!Directory.Exists(trimmedPath2))
+                            throw new Exception($"Path does not exist: {trimmedPath2}");
+
+                        baseSecondaryPath = Path.Combine(trimmedPath2, timeStamp);
+
+                        // ✅ Create folder only if parent exists
+                        Directory.CreateDirectory(baseSecondaryPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        hasError = true; // mark error
+                        string errorMsg = $"SECONDARY PATH ERROR | {DownloadPath2} | {ex.Message}";
+                        LogFTPPathError(errorMsg);
+                        errmsg.AppendLine(errorMsg); // add error to message for email & MessageBox
+                    }
+                }
+
+
+                // 🔹 Get files
+                List<FileSource> allFiles = new List<FileSource>();
+                try
+                {
+                    if (isSystemMultiplePath)
+                    {
+                        allFiles = GetFilesFromSystem(multiplePath, ignore1, out fileError, out fileErrMsg);
+                        if (fileError)
+                        {
+                            hasError = true;
+                            errmsg.Append(fileErrMsg);
+                        }
+                    }
+                    else
+                    {
+                        string ftpHost = GTVeriSys_Net.nDecode(ConfigurationManager.AppSettings["FTPHost"], "Y");
+                        string ftpPort = GTVeriSys_Net.nDecode(ConfigurationManager.AppSettings["FTPPort"], "Y");
+                        string ftpUser = GTVeriSys_Net.nDecode(ConfigurationManager.AppSettings["FTPUser"], "Y");
+                        string ftpPass = GTVeriSys_Net.nDecode(ConfigurationManager.AppSettings["FTPPassword"], "Y");
+
+                        allFiles = GetFilesFromFTP(ftpHost, ftpPort, ftpUser, ftpPass, multiplePath, ignore1);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogFTPPathError("FILE FETCH ERROR | " + ex.Message);
+                }
+
+                // 🔹 Process each file
                 foreach (var file in allFiles)
                 {
                     string fileName = Path.GetFileName(file.SourcePath);
-                    string path1 = Path.Combine(basePath1, fileName);
 
-                    // Primary copy
-                    if (file.IsLocal)
-                        File.Copy(file.SourcePath, path1, true);
-                    else
-                        DownloadSingleFile(file.SourcePath, file.User, file.Pass, path1);
-
-                    // Secondary path
-                    if (!ignore2.Split(',')
-                        .Contains(fileName, StringComparer.OrdinalIgnoreCase))
+                    // Copy to all primary paths
+                    foreach (string primaryPath in basePrimaryPaths)
                     {
-                        File.Copy(path1, Path.Combine(basePath2, fileName), true);
+                        try
+                        {
+                            string destPath = Path.Combine(primaryPath, fileName);
+                            if (file.IsLocal)
+                                File.Copy(file.SourcePath, destPath, true);
+                            else
+                                DownloadSingleFile(file.SourcePath, file.User, file.Pass, destPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            hasError = true; // mark error
+                            string errorMsg = $"FILE COPY ERROR | {file.SourcePath} -> {primaryPath} | {ex.Message}";
+                            LogFTPPathError(errorMsg);
+                            errmsg.AppendLine(errorMsg);
+                        }
+                    }
+
+                    // Copy to secondary path if not ignored
+                    if (baseSecondaryPath != null &&
+                        !ignore2.Split(',').Contains(fileName, StringComparer.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            File.Copy(
+                                Path.Combine(basePrimaryPaths[0], fileName),
+                                Path.Combine(baseSecondaryPath, fileName),
+                                true
+                            );
+                        }
+                        catch (Exception ex)
+                        {
+                            hasError = true;
+                            string errorMsg = $"SECONDARY COPY ERROR | {fileName} | {ex.Message}";
+                            LogFTPPathError(errorMsg);
+                            errmsg.AppendLine(errorMsg);
+                        }
                     }
 
                     // Optional delete
                     if (IsDeleteDownloadDataFromCloud == "1")
                     {
-                        if (file.IsLocal)
-                            File.Delete(file.SourcePath);
-                        else
-                            DeleteFTPFile(file.SourcePath, file.User, file.Pass);
+                        try
+                        {
+                            if (file.IsLocal)
+                                File.Delete(file.SourcePath);
+                            else
+                                DeleteFTPFile(file.SourcePath, file.User, file.Pass);
+                        }
+                        catch (Exception ex)
+                        {
+                            hasError = true;
+                            string errorMsg = $"DELETE ERROR | {file.SourcePath} | {ex.Message}";
+                            LogFTPPathError(errorMsg);
+                            errmsg.AppendLine(errorMsg);
+                        }
                     }
                 }
 
-                MessageBox.Show(
-                    $"Data processed successfully:\n{basePath1}\n{basePath2}",
-                    "Success",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information
-                );
+                // 🔹 Cleanup last 3 days folders
+                try
+                {
+                    if (!string.IsNullOrEmpty(DownloadPath2))
+                    {
+                        KeepLatestNDateFolders(DownloadPath2.Trim(), 3);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    hasError = true;
+                    string errorMsg = "CLEANUP ERROR | " + ex.Message;
+                    LogFTPPathError(errorMsg);
+                    errmsg.AppendLine(errorMsg);
+                }
+
+                // 🔹 Prepare final message
+                msg.AppendLine(hasError ? "Process completed with errors." : "Data processed successfully.");
+                msg.AppendLine();
+                msg.AppendLine("Primary Download Paths:");
+                foreach (string path in basePrimaryPaths) msg.AppendLine(path);
+
+                if (!string.IsNullOrEmpty(baseSecondaryPath))
+                {
+                    msg.AppendLine();
+                    msg.AppendLine("Secondary Download Path:");
+                    msg.AppendLine(baseSecondaryPath);
+                }
+
+                if (errmsg.Length > 0)
+                {
+                    msg.AppendLine();
+                    msg.AppendLine("Errors / Warnings:");
+                    msg.AppendLine(errmsg.ToString());
+                }
+
+                // 🔹 HTML email body
+                string htmlMsg = $@"
+                <div style='font-family:Segoe UI, Arial; font-size:13px; color:#333;'>
+                    <p><strong>{(hasError ? "Process completed with errors" : "Data processed successfully")}</strong></p>
+                    {(basePrimaryPaths.Count > 0
+                                ? $"<p><strong>Primary Download Paths:</strong></p><ul>{string.Join("", basePrimaryPaths.Select(p => $"<li>{System.Net.WebUtility.HtmlEncode(p)}</li>"))}</ul>"
+                                : "<p><strong>No valid primary paths were created.</strong></p>")}
+
+                    {(string.IsNullOrEmpty(baseSecondaryPath)
+                                ? "<p><strong>No valid secondary path was created.</strong></p>"
+                                : $"<p><strong>Secondary Download Path:</strong></p><p>{System.Net.WebUtility.HtmlEncode(baseSecondaryPath)}</p>")}
+
+                    {(errmsg.Length > 0 ? $"<p><strong>Errors / Warnings:</strong><br/>{System.Net.WebUtility.HtmlEncode(errmsg.ToString()).Replace(Environment.NewLine, "<br/>")}</p>" : "")}
+
+                    <hr style='border:none;border-top:1px solid #ddd;margin-top:15px;'/>
+                    <p style='font-size:11px;color:#777;'>Generated on {DateTime.Now:dd-MM-yyyy HH:mm}</p>
+                </div>";
+
+                // 🔹 Send email with dynamic subject
+                string emailSubject = hasError
+                    ? $"[{DateTime.Now:dd-MM-yyyy_hhmmtt}] - ERROR! Server to drive data completed with issues"
+                    : $"[{DateTime.Now:dd-MM-yyyy_hhmmtt}] - Successful! Server to drive data completed";
+
+                try
+                {
+                    SendEmailWithSubject(htmlMsg, emailSubject);
+                }
+                catch (Exception ex)
+                {
+                    LogFTPPathError("EMAIL ERROR | " + ex.Message);
+                }
+
+                // 🔹 Show MessageBox always
+                MessageBox.Show(msg.ToString(), hasError ? "Completed with Errors" : "Success", MessageBoxButtons.OK, hasError ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
+
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error: " + ex.Message);
+                MessageBox.Show("Critical error in DownloadData: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        private void KeepLatestNDateFolders(string basePath, int keepCount)
+        {
+            try
+            {
+                if (!Directory.Exists(basePath))
+                    return;
+
+                var datedFolders = new List<(string Path, DateTime Date)>();
+
+                foreach (string dir in Directory.GetDirectories(basePath))
+                {
+                    string folderName = Path.GetFileName(dir);
+
+                    if (DateTime.TryParseExact(
+                            folderName,
+                            "dd-MM-yyyy",
+                            CultureInfo.InvariantCulture,
+                            DateTimeStyles.None,
+                            out DateTime folderDate))
+                    {
+                        datedFolders.Add((dir, folderDate));
+                    }
+                }
+
+                // Sort by date DESC (latest first)
+                var foldersToKeep = datedFolders
+                    .OrderByDescending(x => x.Date)
+                    .Take(keepCount)
+                    .Select(x => x.Path)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                // Delete rest
+                foreach (var folder in datedFolders)
+                {
+                    if (!foldersToKeep.Contains(folder.Path))
+                    {
+                        Directory.Delete(folder.Path, true);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogFTPPathError("DOWNLOADPATH2 CLEANUP ERROR | " + ex.Message);
             }
         }
         private List<FileSource> GetFilesFromFTP(string ftpHost, string ftpPort, string ftpUser, string ftpPass, string multiplePaths, string ignoreFilesStr)
@@ -646,12 +841,13 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 // deleted
             }
         }
-        private List<FileSource> GetFilesFromSystem(
-        string multiplePaths,
-        string ignoreFilesStr)
+        private List<FileSource> GetFilesFromSystem(string multiplePaths, string ignoreFilesStr, out bool hasError, out StringBuilder errmsg)
         {
-            string[] paths = multiplePaths.Split(',');
-            string[] ignoreFiles = ignoreFilesStr.Split(',');
+            hasError = false;
+            errmsg = new StringBuilder();
+
+            string[] paths = multiplePaths.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            string[] ignoreFiles = ignoreFilesStr.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
             List<FileSource> files = new List<FileSource>();
 
@@ -659,12 +855,19 @@ namespace GT_AutoRunDBBackupAndSyncQry
             {
                 try
                 {
-                    if (!Directory.Exists(dir)) continue;
+                    string trimmedDir = dir.Trim();
+                    if (!Directory.Exists(trimmedDir))
+                    {
+                        hasError = true;
+                        string errorMsg = $"SYSTEM PATH DOES NOT EXIST | {trimmedDir}";
+                        LogFTPPathError(errorMsg);
+                        errmsg.AppendLine(errorMsg);
+                        continue;
+                    }
 
-                    foreach (var file in Directory.GetFiles(dir))
+                    foreach (var file in Directory.GetFiles(trimmedDir))
                     {
                         string fileName = Path.GetFileName(file);
-
                         if (!ignoreFiles.Contains(fileName, StringComparer.OrdinalIgnoreCase))
                         {
                             files.Add(new FileSource
@@ -677,9 +880,13 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 }
                 catch (Exception ex)
                 {
-                    LogFTPPathError($"SYSTEM PATH ERROR | {dir} | {ex.Message}");
+                    hasError = true;
+                    string errorMsg = $"SYSTEM PATH ERROR | {dir} | {ex.Message}";
+                    LogFTPPathError(errorMsg);
+                    errmsg.AppendLine(errorMsg);
                 }
             }
+
             return files;
         }
         private void LogFTPPathError(string message)
@@ -691,12 +898,12 @@ namespace GT_AutoRunDBBackupAndSyncQry
 
                 string logFile = Path.Combine(
                     logDir,
-                    $"FTP_Path_Error_{DateTime.Now:yyyyMMdd}.txt"
+                    $"FTP_Path_Error_{DateTime.Now:dd-MM-yyyy}.txt"
                 );
 
                 File.AppendAllText(
                     logFile,
-                    $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | {message}{Environment.NewLine}"
+                    $"{DateTime.Now:dd-MM-yyyy HH:mm:ss tt} | {message}{Environment.NewLine}"
                 );
             }
             catch
@@ -711,8 +918,42 @@ namespace GT_AutoRunDBBackupAndSyncQry
             public string User { get; set; }
             public string Pass { get; set; }
         }
-        // ================= Data DOWNLOAD =================
+        public void SendEmailWithSubject(string htmlBody, string subject)
+        {
+            try
+            {
+                string toEmails = ConfigurationManager.AppSettings["ToSendingEmail"];
+                string fromEmail = ConfigurationManager.AppSettings["Email"];
+                string password = ConfigurationManager.AppSettings["Password"];
+                int port = int.Parse(ConfigurationManager.AppSettings["PortNo"]);
 
+                MailMessage mail = new MailMessage
+                {
+                    From = new MailAddress(fromEmail, "Report"),
+                    Subject = subject,
+                    Body = htmlBody,
+                    IsBodyHtml = true
+                };
+
+                foreach (string email in toEmails.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    mail.To.Add(email.Trim());
+                }
+
+                using (SmtpClient smtp = new SmtpClient("smtp.gmail.com", port))
+                {
+                    smtp.Credentials = new NetworkCredential(fromEmail, password);
+                    smtp.EnableSsl = true;
+                    smtp.Send(mail);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Email Error: " + ex.Message);
+            }
+        }
+
+        #endregion
 
 
 
