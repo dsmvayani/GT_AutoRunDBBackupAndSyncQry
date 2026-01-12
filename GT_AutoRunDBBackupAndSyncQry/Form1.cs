@@ -299,16 +299,30 @@ namespace GT_AutoRunDBBackupAndSyncQry
                                 continue;
                             }
 
+                            // 🔹 Step 4.5: Existing DB ko overwrite ke liye free karo (NO DROP)
+                            string singleUserSql = $@"
+                            IF EXISTS (SELECT 1 FROM sys.databases WHERE name = '{dbName}')
+                            BEGIN
+                                ALTER DATABASE [{dbName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+                            END";
+
+                            using (SqlCommand singleUserCmd = new SqlCommand(singleUserSql, conn))
+                            {
+                                singleUserCmd.ExecuteNonQuery();
+                            }
+
+
+
                             // Step 5: Build restore query
                             string dataFile = Path.Combine(extractPath, $"{dbName}.mdf");
                             string logFilePath = Path.Combine(extractPath, $"{dbName}_log.ldf");
 
                             string restoreSql = $@"
-                    RESTORE DATABASE [{dbName}]
-                    FROM DISK = '{bakFile}'
-                    WITH REPLACE,
-                    MOVE '{logicalData}' TO '{dataFile}',
-                    MOVE '{logicalLog}' TO '{logFilePath}'";
+                            RESTORE DATABASE [{dbName}]
+                            FROM DISK = '{bakFile}'
+                            WITH REPLACE,
+                            MOVE '{logicalData}' TO '{dataFile}',
+                            MOVE '{logicalLog}' TO '{logFilePath}'";
 
                             SqlCommand restoreCmd = new SqlCommand(restoreSql, conn);
                             restoreCmd.ExecuteNonQuery();
@@ -469,6 +483,7 @@ namespace GT_AutoRunDBBackupAndSyncQry
             DataDownloadBtn.Enabled = false;
             string oldText = UploadDataBtn.Text;
             DataDownloadBtn.Text = "Loading...";
+            DownloadGif.Visible = true;
 
             try
             {
@@ -482,6 +497,7 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 // Wapas button ko normal state me lao
                 DataDownloadBtn.Text = oldText;
                 DataDownloadBtn.Enabled = true;
+                DownloadGif.Visible = false;
             }
             
         }

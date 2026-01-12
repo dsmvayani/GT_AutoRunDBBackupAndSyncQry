@@ -25,8 +25,8 @@
             label2 = new Label();
             DataDownloadBtn = new Button();
             DBNameText = new Label();
-            pictureBox1 = new PictureBox();
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
+            DownloadGif = new PictureBox();
+            ((System.ComponentModel.ISupportInitialize)DownloadGif).BeginInit();
             SuspendLayout();
             // 
             // UploadDataBtn
@@ -90,7 +90,7 @@
             label2.Name = "label2";
             label2.Size = new Size(75, 15);
             label2.TabIndex = 2;
-            label2.Text = "Version: 1.0.8";
+            label2.Text = "Version: 1.0.9";
             // 
             // DataDownloadBtn
             // 
@@ -115,16 +115,17 @@
             DBNameText.Size = new Size(0, 15);
             DBNameText.TabIndex = 4;
             // 
-            // pictureBox1
+            // DownloadGif
             // 
-            pictureBox1.BackColor = Color.Red;
-            pictureBox1.Image = (Image)resources.GetObject("pictureBox1.Image");
-            pictureBox1.Location = new Point(93, 86);
-            pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(50, 42);
-            pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
-            pictureBox1.TabIndex = 5;
-            pictureBox1.TabStop = false;
+            DownloadGif.BackColor = Color.Red;
+            DownloadGif.Image = (Image)resources.GetObject("DownloadGif.Image");
+            DownloadGif.Location = new Point(93, 86);
+            DownloadGif.Name = "DownloadGif";
+            DownloadGif.Size = new Size(50, 42);
+            DownloadGif.SizeMode = PictureBoxSizeMode.Zoom;
+            DownloadGif.TabIndex = 5;
+            DownloadGif.TabStop = false;
+            DownloadGif.Visible = false;
             // 
             // Form1
             // 
@@ -132,7 +133,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.WhiteSmoke;
             ClientSize = new Size(375, 182);
-            Controls.Add(pictureBox1);
+            Controls.Add(DownloadGif);
             Controls.Add(DBNameText);
             Controls.Add(DataDownloadBtn);
             Controls.Add(label2);
@@ -146,7 +147,7 @@
             StartPosition = FormStartPosition.CenterScreen;
             Text = "GT_ARDBBSQ";
             Shown += Form1_Shown;
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)DownloadGif).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -161,6 +162,6 @@
         private Button button1;
         private Button DataDownloadBtn;
         private Label DBNameText;
-        private PictureBox pictureBox1;
+        private PictureBox DownloadGif;
     }
 }
