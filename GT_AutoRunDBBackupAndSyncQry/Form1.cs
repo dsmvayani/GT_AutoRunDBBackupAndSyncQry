@@ -190,10 +190,11 @@ namespace GT_AutoRunDBBackupAndSyncQry
         }
         #endregion
 
-        #region DATA SYNC 
+
+        #region DATA SYNC
         private async void DataSyncBtn_Click(object sender, EventArgs e)
         {
-            // Button disable aur text change
+            // Disable button and change text
             DataSyncBtn.Enabled = false;
             string oldText = DataSyncBtn.Text;
             DataSyncBtn.Text = "Loading...";
@@ -203,17 +204,15 @@ namespace GT_AutoRunDBBackupAndSyncQry
             {
                 await Task.Run(() =>
                 {
-                    RunDataSyncFunc(); // Main kaam alag method me
+                    RunDataSyncFunc(); // Main work
                     SendBranchReportEmail();
                 });
 
-                // ✅ Jab saare databases ho jaye tab ek hi dialog box
-                //MessageBox.Show("🎉 Data Sync Completed Successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 DataSyncLabel.Text = "🎉 Data Sync Completed Successfully!";
             }
             finally
             {
-                // Wapas button ko normal state me lao
+                // Restore button state
                 DataSyncBtn.Text = oldText;
                 DataSyncBtn.Enabled = true;
             }
@@ -224,11 +223,11 @@ namespace GT_AutoRunDBBackupAndSyncQry
 
             try
             {
-                // Step 1: Read config values
+                // Step 1: Read config
                 string[] paths = ConfigurationManager.AppSettings["DataSyncMultipleDataBaseBackupPath"]
-                                    .Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                    .Select(p => p.Trim())
-                                    .ToArray();
+                                        .Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                        .Select(p => p.Trim())
+                                        .ToArray();
 
                 string connectionString = ConfigurationManager.AppSettings["DataSyncConnectionString"];
 
@@ -246,7 +245,7 @@ namespace GT_AutoRunDBBackupAndSyncQry
                         string extractPath = Path.GetDirectoryName(archivePath);
                         string bakFile = "";
 
-                        // Step 2: Extract .bak from .rar/.zip
+                        // Step 2: Extract .bak
                         using (var archive = ArchiveFactory.Open(archivePath))
                         {
                             foreach (var entry in archive.Entries)
@@ -265,33 +264,24 @@ namespace GT_AutoRunDBBackupAndSyncQry
                             continue;
                         }
 
-                        // Step 3: Get DB name from .bak
                         dbName = Path.GetFileNameWithoutExtension(bakFile);
 
                         using (SqlConnection conn = new SqlConnection(connectionString))
                         {
                             conn.Open();
 
-                            // Step 4: Get logical names
-                            string fileListSql = $"RESTORE FILELISTONLY FROM DISK = '{bakFile}'";
-                            SqlCommand fileListCmd = new SqlCommand(fileListSql, conn);
-                            SqlDataReader reader = fileListCmd.ExecuteReader();
-
-                            string logicalData = "";
-                            string logicalLog = "";
-
-                            if (reader.HasRows)
+                            // Step 3: Get logical names
+                            string logicalData = "", logicalLog = "";
+                            using (SqlCommand cmd = new SqlCommand($"RESTORE FILELISTONLY FROM DISK='{bakFile}'", conn))
+                            using (SqlDataReader reader = cmd.ExecuteReader())
                             {
                                 while (reader.Read())
                                 {
-                                    string logicalName = reader["LogicalName"].ToString();
                                     string type = reader["Type"].ToString();
-
-                                    if (type == "D") logicalData = logicalName;
-                                    else if (type == "L") logicalLog = logicalName;
+                                    if (type == "D") logicalData = reader["LogicalName"].ToString();
+                                    else if (type == "L") logicalLog = reader["LogicalName"].ToString();
                                 }
                             }
-                            reader.Close();
 
                             if (string.IsNullOrEmpty(logicalData) || string.IsNullOrEmpty(logicalLog))
                             {
@@ -299,53 +289,73 @@ namespace GT_AutoRunDBBackupAndSyncQry
                                 continue;
                             }
 
-                            // 🔹 Step 4.5: Existing DB ko overwrite ke liye free karo (NO DROP)
-                            string singleUserSql = $@"
+                            // Step 4: Force single user & rollback connections
+                            using (SqlCommand cmd = new SqlCommand($@"
                             IF EXISTS (SELECT 1 FROM sys.databases WHERE name = '{dbName}')
                             BEGIN
                                 ALTER DATABASE [{dbName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-                            END";
-
-                            using (SqlCommand singleUserCmd = new SqlCommand(singleUserSql, conn))
+                            END", conn))
                             {
-                                singleUserCmd.ExecuteNonQuery();
+                                cmd.ExecuteNonQuery();
                             }
 
-
-
-                            // Step 5: Build restore query
+                            // Step 5: Restore DB
                             string dataFile = Path.Combine(extractPath, $"{dbName}.mdf");
                             string logFilePath = Path.Combine(extractPath, $"{dbName}_log.ldf");
 
-                            string restoreSql = $@"
+                            using (SqlCommand cmd = new SqlCommand($@"
                             RESTORE DATABASE [{dbName}]
-                            FROM DISK = '{bakFile}'
+                            FROM DISK='{bakFile}'
                             WITH REPLACE,
                             MOVE '{logicalData}' TO '{dataFile}',
-                            MOVE '{logicalLog}' TO '{logFilePath}'";
+                            MOVE '{logicalLog}' TO '{logFilePath}'", conn))
+                            {
+                                cmd.CommandTimeout = 0; // Unlimited time
+                                cmd.ExecuteNonQuery();
+                            }
 
-                            SqlCommand restoreCmd = new SqlCommand(restoreSql, conn);
-                            restoreCmd.ExecuteNonQuery();
+                            // Step 6: Set DB to MULTI_USER
+                            using (SqlCommand cmd = new SqlCommand($@"ALTER DATABASE [{dbName}] SET MULTI_USER", conn))
+                            {
+                                cmd.ExecuteNonQuery();
+                            }
 
                             File.AppendAllText(logFile, $"[{DateTime.Now}] ✅ Database '{dbName}' restored successfully{Environment.NewLine}");
                         }
 
-                        // ✅ Restore ke turant baad stored procedures execute karo
+                        // Step 7: Wait until database is online
+                        WaitUntilDatabaseOnline(connectionString, dbName);
+
+                        // Step 8: Execute sync stored procedures
                         ExecuteSyncProcedures(connectionString, dbName, logFile);
                     }
                     catch (Exception exDb)
                     {
-                        // agar ek DB me problem ho, baki process continue rahe
                         File.AppendAllText(logFile, $"[{DateTime.Now}] ❌ Database '{dbName}' restore failed - {exDb.Message}{Environment.NewLine}");
                     }
                 }
 
-                // Saare DB process hone ke baad ek line log me
                 File.AppendAllText(logFile, $"[{DateTime.Now}] 🎉 Data Sync Completed{Environment.NewLine}");
             }
             catch (Exception ex)
             {
                 File.AppendAllText(logFile, $"[{DateTime.Now}] ❌ Fatal Error in DataSync - {ex.Message}{Environment.NewLine}");
+            }
+        }
+        private void WaitUntilDatabaseOnline(string connectionString, string dbName)
+        {
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+                while (true)
+                {
+                    using (SqlCommand cmd = new SqlCommand($@"SELECT state_desc FROM sys.databases WHERE name = '{dbName}'", conn))
+                    {
+                        string state = cmd.ExecuteScalar().ToString();
+                        if (state == "ONLINE") break;
+                    }
+                    System.Threading.Thread.Sleep(1000); // wait 1 second and retry
+                }
             }
         }
         private void ExecuteSyncProcedures(string connectionString, string databaseName, string logFile)
@@ -384,33 +394,29 @@ namespace GT_AutoRunDBBackupAndSyncQry
         {
             try
             {
-                // 🔹 Step 1: Config values uthao
                 string connectionString = ConfigurationManager.AppSettings["EmailDatabase"];
                 string toEmails = ConfigurationManager.AppSettings["ToSendingEmail"];
                 string fromEmail = ConfigurationManager.AppSettings["Email"];
                 string password = ConfigurationManager.AppSettings["Password"];
                 int port = int.Parse(ConfigurationManager.AppSettings["PortNo"]);
 
-                // 🔹 Step 2: SQL Query
                 string sql = @"
-                    SELECT
-                        w.WarehouseCode as BranchCode,
-                        w.Warehouse as Branch,
-                        p.BillNo,
-                        Format(Cast(p.BillDate as Date) ,'dd-MMM-yyyy') as BillDate
-                    FROM INV_PointofSalesMasterTAB p
-                    INNER JOIN (
-                        SELECT WarehouseCode, MAX(BillDate) AS LastBillDate
-                        FROM INV_PointofSalesMasterTAB
-                        GROUP BY WarehouseCode
-                    ) x ON p.WarehouseCode = x.WarehouseCode AND p.BillDate = x.LastBillDate
-                    LEFT JOIN GEN_WarehouseTAB w 
-                        ON p.WarehouseCode = w.WarehouseCode;
-                ";
+            SELECT
+                w.WarehouseCode as BranchCode,
+                w.Warehouse as Branch,
+                p.BillNo,
+                Format(Cast(p.BillDate as Date) ,'dd-MMM-yyyy') as BillDate
+            FROM INV_PointofSalesMasterTAB p
+            INNER JOIN (
+                SELECT WarehouseCode, MAX(BillDate) AS LastBillDate
+                FROM INV_PointofSalesMasterTAB
+                GROUP BY WarehouseCode
+            ) x ON p.WarehouseCode = x.WarehouseCode AND p.BillDate = x.LastBillDate
+            LEFT JOIN GEN_WarehouseTAB w 
+                ON p.WarehouseCode = w.WarehouseCode;
+        ";
 
                 DataTable dt = new DataTable();
-
-                // 🔹 Step 3: Run query and fill datatable
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
@@ -422,18 +428,13 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 if (dt.Rows.Count == 0)
                     throw new Exception("⚠️ No data found in SQL query!");
 
-                // 🔹 Step 4: Convert DataTable to HTML
                 StringBuilder sb = new StringBuilder();
                 sb.Append("<h3>📊 Branch Report</h3>");
                 sb.Append("<table border='1' cellpadding='5' cellspacing='0' style='border-collapse: collapse;'>");
-
-                // Table header
                 sb.Append("<tr style='background-color:#f2f2f2;'>");
                 foreach (DataColumn col in dt.Columns)
                     sb.AppendFormat("<th>{0}</th>", col.ColumnName);
                 sb.Append("</tr>");
-
-                // Table rows
                 foreach (DataRow row in dt.Rows)
                 {
                     sb.Append("<tr>");
@@ -443,15 +444,10 @@ namespace GT_AutoRunDBBackupAndSyncQry
                 }
                 sb.Append("</table>");
 
-                // 🔹 Step 5: Send Email
                 MailMessage mail = new MailMessage();
                 mail.From = new MailAddress(fromEmail, "Report");
-
-                // multiple emails add karo
                 foreach (string email in toEmails.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-                {
                     mail.To.Add(email.Trim());
-                }
 
                 mail.Subject = "Daily Branch Report";
                 mail.Body = sb.ToString();
@@ -472,6 +468,7 @@ namespace GT_AutoRunDBBackupAndSyncQry
             }
         }
         #endregion
+
 
         #region DATA DOWNLOAD 
 
@@ -1049,8 +1046,6 @@ namespace GT_AutoRunDBBackupAndSyncQry
         }
 
         #endregion
-
-
 
         private void Form1_Shown(object sender, EventArgs e)
         {

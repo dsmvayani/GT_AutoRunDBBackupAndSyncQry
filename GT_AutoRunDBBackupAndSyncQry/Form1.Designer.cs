@@ -88,9 +88,9 @@
             label2.FlatStyle = FlatStyle.Flat;
             label2.Location = new Point(285, 161);
             label2.Name = "label2";
-            label2.Size = new Size(75, 15);
+            label2.Size = new Size(81, 15);
             label2.TabIndex = 2;
-            label2.Text = "Version: 1.0.9";
+            label2.Text = "Version: 1.0.10";
             // 
             // DataDownloadBtn
             // 
