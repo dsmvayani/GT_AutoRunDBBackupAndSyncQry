@@ -90,7 +90,7 @@
             label2.Name = "label2";
             label2.Size = new Size(81, 15);
             label2.TabIndex = 2;
-            label2.Text = "Version: 1.0.10";
+            label2.Text = "Version: 1.0.11";
             // 
             // DataDownloadBtn
             // 
